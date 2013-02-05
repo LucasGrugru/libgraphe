@@ -15,12 +15,9 @@ struct TypGraphe {
 	int nbMaxSommet;
 	TypVoisins** listesAdjacences;
 };
-
+TypGraphe* creationGraphe(int nbSommetMax);
 TypVoisins* premierElement(int sommet, TypVoisins** listeAdjacences);
-TypVoisins* creationArete(int voisin, int poids, TypVoisins* suivant);
-int insertionArete(TypVoisins* voisin, int sommet, TypVoisins** listeAdjacences);
-
-
+int insertionArete(int sommetCourant, int poids, TypVoisins** listeAdjacences);
 
 
 #endif /* TYPGRAPHE_H_ */
