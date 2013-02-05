@@ -12,3 +12,6 @@ TypVoisins* premierElement(int sommet, TypVoisins** listeAdjacences) {
 }
 
 
+
+
+
