@@ -2,7 +2,6 @@
  * TypVoisins.h
  *
  *  Created on: 29 janv. 2013
- *      Author: lgruber
  */
 
 #ifndef TYPVOISINS_H_
@@ -15,6 +14,8 @@ struct TypVoisins {
 	TypVoisins* voisinSuivant;
 };
 
+TypVoisins* creationVoisin(int numeroSommet, int poids, TypVoisins* suivant);
+TypVoisins* creationVoisinFactice();
 
 
 #endif /* TYPVOISINS_H_ */

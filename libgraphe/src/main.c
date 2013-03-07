@@ -2,39 +2,57 @@
  * main.c
  *
  *  Created on: 29 janv. 2013
- *      Author: lgruber
  */
 
-int menu();
-int actionManager(int c);
+#include <stdio.h>
+#include <stdlib.h>
+#include <string.h>
+
+#include "TypVoisins.h"
+#include "TypGraphe.h"
+#include "actionManager.h"
+
+int menu(int possibilite);
 
 int main(int argv, char** argc) {
-
-	int choix = menu();
-	actionManager(choix);
-}
-
-int menu() {
-	char* choix;
-	printf("Choix ?\n");
-	printf("1 : Quitter l'application.\n");
-	printf("2 : Création d'un graphe manuellement.\n");
-	printf("3 : Import d'un graphe.\n");
-	scanf(choix);
-	if(atoi(choix) > 0 && atoi(choix) < 4)
-		return atoi(choix);
-	return 0;
-}
-
-int actionManager(int c) {
-
-	if(c == 1) { //quitte l'application
-
-	} else if(c == 2) {
-
-	} else if(c == 3) {
-
+	TypGraphe* graphe = NULL;
+	int possibilite = 0;
+	while(1){
+		int choix = menu(possibilite);
+		actionManager(choix, &graphe, &possibilite);
 	}
+}
 
-	return 0;
+/*
+* Fonction : menu
+*
+* Parametres :
+*
+*
+* Retour : int
+*
+* Description : retourne la valeur de choix de l'utilisateur
+*
+*/
+int menu(int possibilite) {
+	int retour = 0;
+	int choix;
+	char* s = (char*)malloc(500*sizeof(char));
+	strcpy(s, "");
+	strcat(s, "\nChoix ?\n");
+	strcat(s, "1 : Quitter l'application\n");
+	strcat(s, "2 : Création d'un graphe manuellement\n");
+	strcat(s, "3 : Import d'un graphe\n");
+	/*Bloque les possiblite si le graphe n'existe pas*/
+	if(possibilite == 1){
+		strcat(s, "4 : Affichage d'un graphe\n");
+		strcat(s, "5 : Ajout d'un sommet\n");
+		strcat(s, "6 : Suppression d'un sommet\n");
+		strcat(s, "7 : Ajout d'une arrete\n");
+		strcat(s, "8 : Suppression d'une arrete\n");
+		strcat(s, "9 : Sauvegarde du graphe courant\n\n");
+	}
+	choix = acquisitionInteger(s);
+	free(s);
+	return choix;
 }
