@@ -16,6 +16,7 @@
 * Fonction : FileExists
 *
 * Parametres : 	char* FileName
+* 				char* folderName
 *
 * Retour : int
 *
@@ -40,6 +41,30 @@ int FileExists(char* FileName, char* folderName)
 }
 
 /*
+* Fonction : FileExists
+*
+* Parametres : 	char* pathFile
+*
+* Retour : int
+*
+* Description : Test l'existence d'un fichier. Ne fonctionne que si on a les permissions sur le fichier teste
+*
+*/
+int FileExistsWitPath(char* pathFile)
+{
+    FILE* fp = NULL;
+
+    fp = fopen( pathFile, "rb" );
+    if( fp != NULL )
+    {
+        fclose( fp );
+        return 1;
+    }
+
+    return 0;
+}
+
+/*
 * Fonction : cutFolderFileNameWithCreate
 *
 * Parametres : 	char* c
@@ -52,14 +77,18 @@ int FileExists(char* FileName, char* folderName)
 * Description : Retourne le nom du dossier issu de la chaine passe en parametre et creer les dossier du chemin a la volee
 *
 */
-void cutFolderFileNameWithCreate(char* c, char** nameFolder, char** nameFile){
+int cutFolderFileNameWithCreate(char* c, char** nameFolder, char** nameFile){
 	char cc[251];
 	char* slash = "/" ; 
 	int nbSlash = 0, i;
 	strcpy(*nameFolder, "");
 	strcpy(*nameFile, "");
 	strcpy(cc, c);
-	
+
+	/*Si chaine non vide*/
+	if(!strcmp(cc, ""))
+		return -1;
+
 	/*Compte le nombre de Slash*/
 	char* p = strtok (cc, slash); 
 	while (p != NULL) 
@@ -85,6 +114,8 @@ void cutFolderFileNameWithCreate(char* c, char** nameFolder, char** nameFile){
 	else
 		p = strtok (NULL, slash);
 	*nameFile = strcat(*nameFile, p);
+	
+	return 1;
 }
 
 /*
@@ -100,17 +131,38 @@ void cutFolderFileNameWithCreate(char* c, char** nameFolder, char** nameFile){
 */
 int actionManager(int c, TypGraphe** g, int* possibilite) {
 	char* s;
+	int retour;
 	/*Quitter l'application*/
-	if(c == 1) {
-		destructionGraphe(g);
-		printf("Fermeture de l'application\n");
+	if(c == QUITTER) {
+		retour = destructionGraphe(g);
+		messageManager(retour);
 		exit(0);
 	}
 	/*Creer un graphe*/
-	else if(c == 2) {
+	else if(c == CREATION) {
 		int nbSommet;
 		char supp = 'a';
-		
+		/*Si un graphe existe, on demande a l utilisateur si il veut l ecraser*/
+		if(*g != NULL){
+			s = "Voulez vous supprimer le graphe courant?[o : Supprimer / n : Annuler]\n";
+			supp = acquisitionReponseON(s);
+			if(supp == 'o'){
+				retour = destructionGraphe(g);
+				messageManager(retour);
+			}
+			else
+				return 0;
+		}
+		s = "Combien de sommet maximum pour le graphe?\n";
+		nbSommet = acquisitionInteger(s);
+		retour = creationGraphe(nbSommet, g);
+		messageManager(retour);
+		*possibilite = 1;
+		return 1;	
+	} 
+	/*Import d'un graphe*/
+	else if(c == IMPORT) {
+		char supp = 'a';
 		/*Si un graphe existe, on demande a l utilisateur si il veut l ecraser*/
 		if(*g != NULL){
 			s = "Voulez vous supprimer le graphe courant?[o : Supprimer / n : Annuler]\n";
@@ -120,41 +172,53 @@ int actionManager(int c, TypGraphe** g, int* possibilite) {
 			else
 				return 0;
 		}
-		
-		s = "Combien de sommet maximum pour le graphe?\n";
-		nbSommet = acquisitionInteger(s);
-		
-		*g = creationGraphe(nbSommet);
-		if(g == NULL){
-			printf("Erreur a la creation du graphe : Erreur d'allocation\n");
+		char pathFile[251];
+		printf("Entrez le chemin du fichier desire : \n");
+		fgets(pathFile, sizeof(pathFile), stdin);
+		/* Nettoyage de la chaine*/
+		char *p = strchr(pathFile, '\n');
+		if (p)
+		{
+			*p = 0;
 		}
-		*possibilite = 1;
-		return 1;	
-	} 
-	/*Import d'un graphe*/
-	else if(c == 3) {
+		strcat(pathFile, ".txt");
+		/*Si le fichier n'existe pas*/
+		if(!FileExistsWitPath(pathFile))
+		{
+			printf("Fichier inexistant\n");
+			return -1;
+		}
+		retour = importGraphe(pathFile, g);
+		messageManager(retour);
 		*possibilite = 1;
 	}
 	/*Affichage d'un graphe*/
-	else if(c == 4 && *possibilite == 1) {
-		affichageGraphe(*g);
+	else if(c == AFFICHAGE && *possibilite == 1) {
+		retour = affichageGraphe(*g);
+		/* Si retour positif ==> reussite affichage donc pas de message.
+		 * 						 pas besoin d'indiquer que l'affichage a reussi
+		 */
+		if(!retour)
+			messageManager(retour);
 	}
 	/*Ajout d'un sommet*/
-	else if(c == 5 && *possibilite == 1) {
+	else if(c == ADD_SOMMET && *possibilite == 1) {
 		int numeroSommet;
 		s = "Quel sommet creer?\n";
 		numeroSommet = acquisitionInteger(s);
-		ajoutSommet(numeroSommet, *g);
+		retour = ajoutSommet(numeroSommet, *g);
+		messageManager(retour);
 	}
 	/*Suppression d'un sommet*/
-	else if(c == 6 && *possibilite == 1) {
+	else if(c == DELETE_SOMMET && *possibilite == 1) {
 		int numeroSommet;
 		s = "Quel sommet supprimer?\n";
 		numeroSommet = acquisitionInteger(s);
-		suppressionSommet(numeroSommet, *g);
+		retour = suppressionSommet(numeroSommet, *g);
+		messageManager(retour);
 	}
 	/*Ajout d'une arrete*/
-	else if(c == 7 && *possibilite == 1) {
+	else if(c == ADD_ARRETE && *possibilite == 1) {
 		int numeroSommet, numeroVoisin, poids;
 		char oriente = 'a';
 		
@@ -166,13 +230,15 @@ int actionManager(int c, TypGraphe** g, int* possibilite) {
 		poids = acquisitionInteger(s);
 		s = "Arrete oriente? [o/n]?\n";
 		oriente = acquisitionReponseON(s);
-		insertionArrete(numeroSommet, numeroVoisin, poids, *g);
+		retour = insertionArrete(numeroSommet, numeroVoisin, poids, *g);
+		messageManager(retour);
 		if(oriente == 'n'){
-			insertionArrete(numeroVoisin, numeroSommet, poids, *g);	
+			retour = insertionArrete(numeroVoisin, numeroSommet, poids, *g);	
+			messageManager(retour);
 		}
 	}
 	/*Suppression d'une arrete*/
-	else if(c == 8 && *possibilite == 1) {
+	else if(c == DELETE_ARRETE && *possibilite == 1) {
 		int numeroSommet, numeroVoisin, poids;
 		char oriente = 'a';
 		
@@ -184,13 +250,15 @@ int actionManager(int c, TypGraphe** g, int* possibilite) {
 		poids = acquisitionInteger(s);
 		s = "Arrete oriente? [o/n]?\n";
 		oriente = acquisitionReponseON(s);
-		suppressionArrete(numeroSommet, numeroVoisin, poids, *g);
+		retour = suppressionArrete(numeroSommet, numeroVoisin, poids, *g);
+		messageManager(retour);
 		if(oriente == 'n'){
-			suppressionArrete(numeroVoisin, numeroSommet, poids, *g);	
+			retour = suppressionArrete(numeroVoisin, numeroSommet, poids, *g);
+			messageManager(retour);
 		}
 	}
 	/*Sauvegarde d'un graphe*/
-	else if(c == 9 && *possibilite == 1) {
+	else if(c == SAUVEGARDE && *possibilite == 1) {
 		/*chemin de fichier limite a 251 caracteres. Limitation des systemes FAT32 a 255 + extension .txt*/
 		char pathFile[251];
 		char ecraser = 'a';
@@ -206,18 +274,23 @@ int actionManager(int c, TypGraphe** g, int* possibilite) {
 		}
 		/*On recupere le chemin et le nom de fichier separement*/
 		cutFolderFileNameWithCreate(pathFile, &nameFolder, &nameFile);
-		/*On ajoute l'extension*/
+		printf("FICHIER : %s ---------------- %s\n",nameFolder, nameFile);
+		/*On ajoute l'extension au fichier*/
 		strcat(nameFile, ".txt");
-		/*Si le fichier existe, on dmeande si l'utilisateur souhaite l'ecraser*/
+		/*Si le fichier existe, on demande si l'utilisateur souhaite l'ecraser*/
 		if(FileExists(nameFile, nameFolder))
 		{
 			s = "Fichier existant, ecraser? [o/n]?\n";
 			ecraser = acquisitionReponseON(s);
-			if(ecraser == 'o')
-				sauvegardeGraphe(nameFolder, nameFile, *g);
+			if(ecraser == 'o'){
+				retour = sauvegardeGraphe(nameFolder, nameFile, *g);
+				messageManager(retour);
+			}
 		}
-		else
-			sauvegardeGraphe(nameFolder, nameFile, *g);
+		else {
+			retour = sauvegardeGraphe(nameFolder, nameFile, *g);
+			messageManager(retour);
+		}
 		free(nameFile);
 		free(nameFolder);
 	}
@@ -225,7 +298,9 @@ int actionManager(int c, TypGraphe** g, int* possibilite) {
 	return 0;
 }
 
-/*Les deux fonctions suivantes permettent de nettoyer le buffer correctement apres un saisie de caractere au clavier*/
+/* Les deux fonctions suivantes permettent de nettoyer le buffer correctement apres 
+ * une saisie de caractere au clavier ou depuis un fichier
+ */
 void purger(void)
 {
     int c;
@@ -296,8 +371,6 @@ int acquisitionInteger(char* s){
 *
 */
 char acquisitionReponseON(char* s){
-	int i;
-	char ret;
 	/*On limite la taille d'un entier a 10 caractere (integer code sur 8bits)*/
 	char c = 'a';
 	

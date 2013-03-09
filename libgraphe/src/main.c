@@ -14,7 +14,7 @@
 
 int menu(int possibilite);
 
-int main(int argv, char** argc) {
+int main(void) {
 	TypGraphe* graphe = NULL;
 	int possibilite = 0;
 	while(1){
@@ -35,7 +35,6 @@ int main(int argv, char** argc) {
 *
 */
 int menu(int possibilite) {
-	int retour = 0;
 	int choix;
 	char* s = (char*)malloc(500*sizeof(char));
 	strcpy(s, "");

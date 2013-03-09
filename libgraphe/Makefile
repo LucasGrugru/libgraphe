@@ -6,7 +6,7 @@
 
 # Variables
 CC = gcc -g
-CFLAGS = -W
+CFLAGS = -W -Wall
 CPPFLAGS = -I.
 LDLIBS = -lm
 
